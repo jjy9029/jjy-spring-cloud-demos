@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jjy</groupId>
+        <artifactId>LearnDemos</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <groupId>com.jjy.api</groupId>
+    <artifactId>openFeignApi</artifactId>
+    <description>
+        服务之间要调用的话需要写openFeign的Client，如果服务很多的话并且都需要调用其他服务的话，就需要写多的Client，这样重复写很麻烦……
+        所以可以将每个服务对应Client和DTO都写在这个api模块中，其他服务只需要依赖这个api模块，装配想要服务的Client即可实现服务中函数的调用。
+        此模块中只有openFeign的依赖，但是却可以使用springboot的依赖，原来是openFeign中有springboot和web相关下依赖
+        所以可以在此模块中定义接口也可以写配置类、注册bean、自动装配……操作。
+    </description>
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+
+<dependencies>
+    <!--openFeign-->
+    <!-- 连接池和负载均衡在调用时候由调用者决定，所以在调用者服务中导入，
+    api模块只负责定义每个服务所对应的openFeign的Client和DTO 只需要这个依赖即可-->
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-openfeign</artifactId>
+    </dependency>
+</dependencies>
+
+
+</project>

@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: mynacosTest
+  profiles:
+    active: dev    # 选择了dev之后 application也会使用 application-dev的配置，并且读取的nacos的配置也是 名-dev.yaml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        username: nacos
+        password: nacos
+        group: DEFAULT_GROUP
+      config:
+        file-extension: yaml
+        server-addr: localhost:8848
+        extension-configs:  # 扩展配置文件
+        shared-configs:  # 共享配置文件
+
+
+

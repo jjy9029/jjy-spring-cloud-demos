@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.12</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>com.jjy</groupId>
+    <artifactId>LearnDemos</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <!--   springCloud的父项目的打包方式要是pom -->
+    <packaging>pom</packaging>
+    <name>LearnDemos</name>
+    <description>
+        这里将记录我的java后端的所有实验demos
+        每个模块先可以看看其pom.xml中的dependencies和description大致了解
+        会在其中说明配置具体的信息，并且会介绍demo中的用法、格式说明
+        具体细节的在demo中 以具体的代码加上注释来说明（每个模块的每个包下的代码都看看）。
+        其中有些模块是样例模块，可以单独启动使用，有些是抽取出来作为工具模块：比如 openFeign 客户端成api模块
+        （不单独启动），可以作为其他模块的依赖。
+    </description>
+    <modules>
+        <module>mybatis</module>
+        <module>swagger</module>
+        <module>mybatis-plus</module>
+        <module>nacos</module>
+        <module>openFeignProvider</module>
+        <module>openFeignConsumer</module>
+        <module>openFeignApi</module>
+        <module>gateway</module>
+        <module>ControllerExample</module>
+        <module>rocketmq</module>
+        <module>rabbitmq</module>
+        <module>seataOrder</module>
+        <module>seataPay</module>
+        <module>elasticSearch</module>
+    </modules>
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <!--   这里是所有的子类都需要用到的依赖-->
+    <dependencies>
+        <!-- lombok-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+    <!--    对于子类的依赖的版本进行控制(不是导入依赖，而是管理依赖的版本)  基本用于springcloud的版本控制-->
+    <dependencyManagement>
+        <dependencies>
+
+            <!--  springcloud的依赖-->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>2021.0.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!--  springcloud alibaba的依赖-->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>2021.0.4.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

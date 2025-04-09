@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jjy</groupId>
+        <artifactId>LearnDemos</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <groupId>com.jjy.nacos</groupId>
+    <artifactId>nacos</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <description.priority>
+
+        文件启动顺序:
+
+        1. bootstrap.yml 首先加载，用于配置应用的启动环境。
+
+        2. Nacos 配置中心的配置文件:
+        2.1 先加载 共享配置文件 (shared-configs)
+        2.2 然后是 扩展配置文件 (extension-configs)
+        2.3 最后是 项目应用名配置文件 ([服务名]-[spring.active.profile].yaml)
+
+        3. application.yml 在 Nacos 配置加载之后。
+
+
+        文件的优先级顺序(覆盖级别):
+
+        1. Nacos上的配置:
+        1.1 项目应用名配置文件 ([服务名]-[spring.active.profile].yaml)
+        1.2 扩展配置文件 (extension-configs)
+        1.3 共享配置文件 (shared-configs)
+
+        2. 本地 application.yml 优先级低于所有从 Nacos 加载的配置。
+
+        3. 本地 bootstrap.yml 优先级最低。
+
+    </description.priority>
+
+
+    <description.introduce>
+
+        1. bootstrap 虽然优先级比较低，但是它是启动最早的
+        可以用来启动时候 对 进行nacos注册配置 以及 设置如何获取nacos上保存的配置
+        同时也可以配置项目的环境，通过设置profile 的active 来指定环境对应的文件
+        同理 nacos上的配置文件，也只会读取 服务名-dev.yaml 和 服务名.yaml 文件（默认每种环境都有） ，不会读取 服务名-prod.yaml。
+        当然 bootstrap 也可以有 boostrap-dev.yml 等来区分环境，
+        但是我觉得个人的项目 用默认bootstrap.yml 里面指定profile 就行了。
+
+        2. application.yml 的优先级高一点 本地配置文件，适合本地开发时的临时覆盖、默认值设置，以及不需要动态更新的配置
+           bootstrap指定了profile，那么application就可以区分环境，比如application-dev.yml 和 application-prod.yml
+
+        3. nacos文件配置  共享配置shared-configs  动态更新支持，
+        可以区分环境 比如有 服务名-dev.yaml 和 服务名-prod.yaml 两个文件(也是有profile指定)，
+
+
+        上述的文件都是可以区分环境的由 后缀 -dev/ -prod 等等来命名，选定环境之后，其他环境的文件不会载入，但是默认的文件会载入。
+        比如： 设置profile的active为dev
+        会加载application-dev.yml 文件和 application.yml（默认每种环境都有），而不会加载application-prod.yml文件。
+        并且application-dev.yml中的 配置会覆盖 application.yml 中的同名配置。以此实现环境改变时，配置的改变，
+        当然最终重复变量名或者占位符的配置是什么还是要依据上述description.priority的 文件的优先级顺序(覆盖级别) 依次来决定。
+    </description.introduce>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+
+
+        <!--nacos配置管理-->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
+        </dependency>
+
+
+    </dependencies>
+
+</project>

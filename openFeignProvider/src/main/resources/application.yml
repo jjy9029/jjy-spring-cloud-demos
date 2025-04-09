@@ -1,0 +1,18 @@
+server:
+  port: 8703
+
+spring:
+  application:
+    name: openFeignProvider
+  cloud:
+    nacos:
+      discovery:
+        server-addr: http://localhost:8848
+        username: nacos
+        password: nacos
+
+
+feign:
+  okhttp:
+    enabled: true
+

@@ -1,0 +1,29 @@
+server:
+  port: 8710
+
+spring:
+  cloud:
+    sentinel:
+      transport:
+        dashboard: http://localhost:8858
+      scg:
+        fallback:
+          mode: response
+          response-status: 200
+          response-body:  '{"code": 200,"message": "服务暂时不可用，稍后重试！"}'
+      datasource:
+        ds-flow:    # 流控配置
+          nacos:
+            server-addr: http://localhost:8848
+            username: nacos
+            password: nacos
+            data-id: gateway-sentinel-flow-rules.json
+            group-id: DEFAULT_GROUP
+            rule-type: gw_flow
+            data-type: json
+#        ds-degrade:    # 降级配置
+
+      eager: true
+      enabled: true
+
+

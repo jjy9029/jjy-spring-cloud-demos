@@ -1,0 +1,11 @@
+server:
+  port: 8731
+
+
+jjy:
+  db:
+    database_name: seata-pay
+
+feign:
+  okhttp:
+    enabled: true

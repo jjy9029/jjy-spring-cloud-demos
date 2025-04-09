@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: seata-pay
+  profiles:
+    active:
+      dev
+  cloud:
+    nacos:
+      discovery:
+        server-addr: http://localhost:8848
+        username: nacos
+        password: nacos
+        group: DEFAULT_GROUP
+      config:
+        server-addr: http://localhost:8848
+        username: nacos
+        password: nacos
+        file-extension: yaml
+        shared-configs:
+          - data-id: shared-jdbc.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+
+          - data-id: shared-mybatis-plus.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+
+          - data-id: shared-seata.yaml
+            group: DEFAULT_GROUP
+            refresh: true
+
+
+
+

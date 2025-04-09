@@ -1,0 +1,6 @@
+server:
+  port: 8732
+
+jjy:
+  db:
+    database_name: seata-order

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.jjy</groupId>
+        <artifactId>LearnDemos</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <groupId>com.jjy.learn</groupId>
+    <artifactId>mybatis-plus</artifactId>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+
+        <!-- springboot连接数据库 mysql-->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--  mysql的连接池-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-starter</artifactId>
+            <version>1.2.12</version>
+        </dependency>
+
+        <!--        mybatis-plus  注意区分 springboot的版本是 2.x还是3.x -->
+        <!--  springboot3.x的版本的话包和这个不一样的  直接官网选择好复制就行  -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+            <version>3.5.10.1</version>
+        </dependency>
+
+<!--    mybatis-plus 在3.5之后的版本由于 jsqlparser不支持java8 -->
+        <dependency><groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
+            <version>3.5.10.1</version> <!-- 确保版本和 MyBatis Plus 主包一致 -->
+        </dependency>
+
+    </dependencies>
+
+
+    <description>
+        1.配置dependecies中的依赖。
+        2.配置application.yml中的数据源以及mybatis-plus的配置。
+        3.编写实体类
+        4.编写mapper接口继承BaseMapper
+        5.编写service接口继承IService
+        6.编写ServiceImpl类继承ServiceImpl实现service接口
+        7.在controller中调用service接口的相关方法。（这里在test类中调用,@Autowired注入service，然后调用相关方法）
+        tips：虽然配置好之后的service有了操作数据库的函数并且可以直接调用，但是还是建议这些函数在service内部调用，
+        而不是直接暴露给调用者，这样可以更好的封装service接口，提高代码的可维护性。
+        比如 在demo中 可以使用 userService.save() 插入数据，
+        但是如果要对数据处理的话就需要写在controller中了，这样会导致controller中代码过多，不利于维护。
+        可以对mp提供的函数进行自定义的封装，形成自己需要的业务功能：
+        在service中自定义函数，比如
+        public void saveUser(User User){
+            // 数据处理
+            save(user); // 这个save函数则是mp提供给service的sql函数
+        }
+        这样Service只暴露给调用者自定义的函数，在自定义的函数中完成业务处理和使用Mybatis-plus的sql的函数
+        当然因为封装挺麻烦的，所以样例还是直接在test中直接调用了所以mp的函数使用在test中,基本的配置写在各个类或者接口当中。
+    </description>
+
+</project>

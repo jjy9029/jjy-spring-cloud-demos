@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/learn?useSSL=false&serverTimezone=UTC  #&rewriteBatchedStatemments=true 调高批处理速度
+    username: root
+    password: jjyyyj667112
+    type: com.alibaba.druid.pool.DruidDataSource
+    druid:
+      initial-size: 5  # 初始化连接数
+      min-idle: 5  # 最小连接数
+      max-active: 20  # 最大连接数
+      max-wait: 60000  # 获取连接等待超时时间
+      pool-prepared-statements: false  # 是否缓存preparedStatement
+      max-pool-prepared-statement-per-connection-size: 0  # 每个连接的最大缓存preparedStatement数量
+      time-between-eviction-runs-millis: 60000  # 间隔多久进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+      min-evictable-idle-time-millis: 300000  # 连接保持空闲而不被驱逐的最短时间
+
+
+logging:
+  file:
+    path: E:/log/
+
+
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+      insert-strategy: not_null   # 插入策略
+      update-strategy: not_null    # 更新策略
+      logic-delete-field: deleted  # 逻辑删除字段名
+      logic-delete-value: 1  # 逻辑删除值
+      logic-not-delete-value: 0  # 逻辑未删除值
+
+server:
+  port: 8701

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jjy.mybatis.mapper.UserMapper">
+    <!--    resultMap指定 对象和列名的对应关系，id属性指定主键，result属性指定其他列，
+    property属性指定对象属性名 ,column属性指定数据库列名 -->
+    <resultMap id="reslutMap" type="com.jjy.mybatis.domain.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+    </resultMap>
+
+
+ <!--  根据id查询  -->
+    <select id="selectById" resultMap="reslutMap">
+        select *
+        from user
+        where id = #{id};
+    </select>
+
+<!--    根据条件 动态查询-->
+    <select id="selectByUser" resultType="com.jjy.mybatis.domain.User">
+        select * from user
+        <where>
+            <if test="username!=null and username!=''">username = #{username}</if>
+            <if test="password!=null and password!=''"> and password = #{password}</if>
+        </where>
+    </select>
+
+
+    <!--     动态sql插入 满足条件才插入对应的列，否则不插入 但是如果数据库中设置为not full且没有设置默认值，则会报错-->
+    <insert id="insertUser">
+        insert into user
+        <trim suffixOverrides="," prefix="(" suffix=")">
+            <if test="username!=null and username!=''">username,</if>
+            <if test="password!=null and password!=''">password,</if>
+        </trim>
+        <trim suffixOverrides="," prefix="values (" suffix=")">
+            <if test="username!=null and username!=''">#{username},</if>
+            <if test="password!=null and password!=''">#{password},</if>
+        </trim>
+    </insert>
+
+<!--    动态更新 -->
+    <update id="updateId">
+        update user
+        <set>
+            <if test="username!=null and username!=''"> username = #{username}, </if>
+            <if test="password!=null and password!=''">password = #{password}, </if>
+        </set>
+        where id = #{id}
+
+    </update>
+
+    <delete id="deleteById">
+        delete
+        from user
+        where id = #{id}
+    </delete>
+
+    <delete id="deleteByList">
+        delete
+        from user
+        where id in
+        <foreach collection="list" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
+
+</mapper>
