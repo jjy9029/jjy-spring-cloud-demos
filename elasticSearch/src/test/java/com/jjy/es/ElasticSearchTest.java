@@ -111,21 +111,9 @@ public class ElasticSearchTest {
 
 
     @Test
-    void testBoolQuery(List<Map.Entry<String, String>> mustQuery,
-                       List<Map.Entry<String, String>> shoudQuery,
-                       List<Map.Entry<String, String>> mustNotQuery,
-                       List<Map.Entry<String, String>> filterQuery
-    ) throws IOException {
+    void testBoolQuery() throws IOException {
         SearchRequest request = new SearchRequest("jjy_test_elastic");
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-        if (mustQuery != null && mustQuery.size() > 0) {
-            for (Map.Entry<String, String> entry : mustQuery) {
-                boolQueryBuilder.must(
-                        QueryBuilders.matchQuery(entry.getKey(), entry.getValue())
-                );
-            }
-        }
-
         request.source().query(boolQueryBuilder);
         SearchResponse response = client.search(request, RequestOptions.DEFAULT);
         SearchHits hits = response.getHits();
@@ -151,12 +139,11 @@ public class ElasticSearchTest {
                         ScoreFunctionBuilders.fieldValueFactorFunction("age")
                                 .factor(10f).modifier(FieldValueFactorFunction.Modifier.LOG1P).setWeight(2f)
                 )
-
         };
         FunctionScoreQueryBuilder functionScoreQueryBuilder = QueryBuilders.functionScoreQuery(boolQueryBuilder, filterFunctionBuilders);
         request.source().query(functionScoreQueryBuilder);
     }
-
+    
     @Test
     void testAggregation() throws IOException {
 

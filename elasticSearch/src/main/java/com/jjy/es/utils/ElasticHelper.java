@@ -2,9 +2,7 @@ package com.jjy.es.utils;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
-import com.jjy.es.domain.MatchCondition;
-import com.jjy.es.domain.RangeCondition;
-import com.jjy.es.domain.TermCondition;
+import com.jjy.es.domain.*;
 import org.apache.http.HttpHost;
 import org.apache.lucene.util.automaton.LimitedFiniteStringsIterator;
 import org.elasticsearch.action.DocWriteResponse;
@@ -23,8 +21,11 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -68,11 +69,14 @@ public class ElasticHelper {
     }
 
     // 新增文档
-    public void createDoc(String indexName, String docId, Object object) throws IOException {
+    public boolean createDoc(String indexName, String docId, Object object) throws IOException {
         IndexRequest request = new IndexRequest(indexName).id(docId);
         request.source(JSONUtil.toJsonStr(object), XContentType.JSON);
         IndexResponse response = client.index(request, RequestOptions.DEFAULT);
-        System.out.println(response.getResult());
+        if(response.getResult() == DocWriteResponse.Result.CREATED){
+            return true;
+        }
+        return false;
     }
 
     // 更新文档
@@ -102,55 +106,98 @@ public class ElasticHelper {
     }
 
 
-    public Map<String, String> boolMatchQuery(String indexname,String highlightField,
+
+
+    // es的 bool 查询，可以实现复杂的查询条件，包括must、should、filter、mustNot等，这里封装了常用的查询条件
+    // 包括match、term、range、bool等子查询条件，可以根据需求灵活使用
+    // 高亮功能可以根据需求选择是否开启，如果开启，则会返回匹配到的高亮内容
+    public ElasticResult boolQuerySearch(String indexname,String highlightField, int from, int size,
           List<MatchCondition> mustQuery, List<MatchCondition> shouldQuery,
           List<TermCondition> filterTermQuery, List<RangeCondition> filterRangeQuery,
           List<TermCondition> mustNotTermQuery,List<RangeCondition> mustNotRangeQuery) throws IOException {
 
-        Map<String, String> result = new HashMap<>();
         SearchRequest request = new SearchRequest(indexname);
-
+        // 添加查询条件
         request = handleSearchRequestQuery(request,
                 mustQuery, shouldQuery,
                 filterTermQuery, filterRangeQuery,
                 mustNotTermQuery, mustNotRangeQuery);
 
+        // 添加高亮条件
+        if (highlightField != null && highlightField != ""){
+            request = handleSearchRequestHighlight(request, highlightField);
+        }
+
+        // 分页条件
+        request.source().from(from).size(size);
         SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-        handleSearchResponse(response,highlightField);
-        return result;
+        ElasticResult elasticResult = handleSearchResponse(response, highlightField);
+        return elasticResult;
     }
 
-    public Map<String, Object> searchAllQuery(String indexname, int from, int size,
-                                              List<Map.Entry<String, SortOrder>> sortsProperty, String highlightField) throws IOException {
-        Map<String, Object> result = new HashMap<>();
-        List<String> sources = new ArrayList<>();
-        List<String> highlights = new ArrayList<>();
+
+    // 根据提供的sortFiled和sortOrder排序查询结果集
+    // 由于是自己定义排序顺序，那么就不采用es的打分机制,也就不使用 匹配查询
+    // 所以 sortFiled和sortOrder是必传参数和一些过滤的条件
+    // 参与的排序的一般是精确值
+    public ElasticResult sortQuerySearch(String indexname, int from, int size,
+                                         List<SortCondition> sortConditions,
+                                         List<TermCondition> filterTermQuery,
+                                         List<RangeCondition> filterRangeQuery,
+                                         List<TermCondition> mustNotTermQuery,
+                                         List<RangeCondition> mustNotRangeQuery) throws IOException {
+
         SearchRequest request = new SearchRequest(indexname);
-        request.source().query(QueryBuilders.matchAllQuery());
+
+        // 添加过滤条件 但是打分的匹配条件就传入为null，不进行处理
+        request = handleSearchRequestQuery(request,
+                null,null,
+                filterTermQuery, filterRangeQuery,
+                mustNotTermQuery, mustNotRangeQuery);
+        // 添加排序条件
+        request = handleSearchRequestOrder(request, sortConditions);
         request.source().from(from).size(size);
-        // 排序条件应用 并且为了不影响排序的先后次序使用了list遍历而不是用map
-        if (sortsProperty != null && sortsProperty.size() > 0) {
-            for (Map.Entry<String, SortOrder> entry : sortsProperty) {
-                request.source().sort(entry.getKey(), entry.getValue());
+        SearchResponse response = client.search(request, RequestOptions.DEFAULT);
+        ElasticResult elasticResult = handleSearchResponse(response, null);
+        return elasticResult;
+    }
+
+
+
+    // 自定义评分权重函数
+    public ElasticResult functionScoreQuerySearch(String indexname, int from, int size,
+                                  List<ScoreFunctionCondition> scoreFunctionConditions)throws  IOException{
+
+        SearchRequest request = new SearchRequest(indexname);
+        FunctionScoreQueryBuilder.FilterFunctionBuilder[] filterFunctionBuilders = {};
+        if (scoreFunctionConditions != null && scoreFunctionConditions.size() > 0){
+            for (int i = 0; i < scoreFunctionConditions.size(); i++){
+                ScoreFunctionCondition scoreFunctionCondition = scoreFunctionConditions.get(i);
+                if (scoreFunctionCondition.getCondition().getClass().equals(MatchCondition.class)) {
+
+                }else if (scoreFunctionCondition.getCondition().getClass().equals(TermCondition.class)){
+
+                }else if (scoreFunctionCondition.getCondition().getClass().equals(RangeCondition.class)){
+
+                }
             }
         }
-//        if (highlightField != null && !highlightField.equals("")){
-//            request.source().highlighter(SearchSourceBuilder.highlight()
-//                    .field("info")
-//                    .preTags("<em>")
-//                    .postTags("</em>"));
-//            System.out.println(highlightField);
-//            System.out.println("highlight");
-//        }
+        request.source().query(QueryBuilders.functionScoreQuery(filterFunctionBuilders));
+        request.source().from(from).size(size);
         SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-        return handleSearchResponse(response, null);
+        ElasticResult elasticResult = handleSearchResponse(response, null);
+        return elasticResult;
     }
 
 
 
 
 
+     //
+    //  下面的方法是一些 private 辅助方法，主要是用于上面public函数 实现功能时候的辅助工具方法
+    //
 
+    // 这个是处理搜索请求的各种条件 ，需要使用条件就传入对应的list ，没有的的话就传入null
     private SearchRequest handleSearchRequestQuery(SearchRequest request,  // 搜索请求
                                                    List<MatchCondition> mustQuery, // must条件
                                                    List<MatchCondition> shouldQuery, // should条件
@@ -167,6 +214,7 @@ public class ElasticHelper {
                 );
             }
         }
+
         // 添加shoud条件
         if (shouldQuery != null && shouldQuery.size() > 0) {
             for (MatchCondition item : shouldQuery) {
@@ -175,8 +223,6 @@ public class ElasticHelper {
                 );
             }
         }
-
-
 
         // 添加filter精确值条件
         if (filterTermQuery != null && filterTermQuery.size() > 0) {
@@ -217,7 +263,6 @@ public class ElasticHelper {
                 );
             }
         }
-
         // 添加bool查询器到搜索请求中
         request.source().query(boolQueryBuilder);
         return request;
@@ -226,10 +271,10 @@ public class ElasticHelper {
 
     //给搜索请求添加排序条件 排序条件的顺序和传入的排序条件顺序一致所以要用list遍历
     // list中是 一个个 键值对 key是排序的字段，value是排序的顺序（ASC/DESC）
-    private SearchRequest handleSearchRequestOrder(SearchRequest request, List<Map.Entry<String, SortOrder>> sortsProperty) {
-        if (sortsProperty != null && sortsProperty.size() > 0) {
-            for (Map.Entry<String, SortOrder> item : sortsProperty) {
-                request.source().sort(item.getKey(), item.getValue());
+    private SearchRequest handleSearchRequestOrder(SearchRequest request, List<SortCondition> sortConditions) {
+        if (sortConditions != null && sortConditions.size() > 0) {
+            for (SortCondition item : sortConditions) {
+                request.source().sort(item.getFieldName(), item.getSortOrder());
             }
         }
         return request;
@@ -243,10 +288,10 @@ public class ElasticHelper {
     }
 
 
+
     // 处理搜索到的hits结果集 根据需求装载sources和highlights
     // sources是文档的内容，highlights是根据match匹配到高亮内容（不是所有查询都可以产生高亮）
-    private Map<String, Object> handleSearchResponse(SearchResponse response, String highlightField) {
-        Map<String, Object> result = new HashMap<>();
+    private ElasticResult handleSearchResponse(SearchResponse response, String highlightField) {
         List<String> sources = new ArrayList<>();
         List<String> highlights = new ArrayList<>();
         SearchHits hits = response.getHits();
@@ -262,10 +307,12 @@ public class ElasticHelper {
                 }
             }
         }
-        // 装载结果集 如果没有命中结果，则sources为空，highlights为空
-        result.put("sources", sources);
-        result.put("highlights", highlights);
-        return result;
+
+        // 封装ElasticResult对象
+        return ElasticResult.builder()
+                .sources(sources)
+                .highlights(highlights)
+                .build();
     }
 
 
