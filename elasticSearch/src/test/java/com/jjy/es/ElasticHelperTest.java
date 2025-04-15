@@ -1,6 +1,7 @@
 package com.jjy.es;
 
 import cn.hutool.json.JSONUtil;
+import com.jjy.es.domain.AggResult;
 import com.jjy.es.domain.ElasticResult;
 import com.jjy.es.domain.MatchCondition;
 import com.jjy.es.domain.SortCondition;
@@ -89,6 +90,17 @@ public class ElasticHelperTest {
         System.out.println(elasticResult);
     }
 
+
+
+    @Test
+    void testAggregationQuery() throws IOException {
+        String indexName = "jjy_test_elastic";
+        int size = 10;
+        String termFiled = "email";
+        String statsFiled = "age";
+        List<AggResult> results = elasticHelper.aggregationQuerySearch(indexName, size, termFiled, statsFiled, null, null);
+        System.out.println(results.get(0));
+    }
 
 
 }

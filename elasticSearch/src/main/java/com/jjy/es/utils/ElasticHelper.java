@@ -28,11 +28,20 @@ import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.metrics.Stats;
+import org.elasticsearch.search.aggregations.metrics.Sum;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.stereotype.Component;
+
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.io.IOException;
@@ -73,7 +82,7 @@ public class ElasticHelper {
         IndexRequest request = new IndexRequest(indexName).id(docId);
         request.source(JSONUtil.toJsonStr(object), XContentType.JSON);
         IndexResponse response = client.index(request, RequestOptions.DEFAULT);
-        if(response.getResult() == DocWriteResponse.Result.CREATED){
+        if (response.getResult() == DocWriteResponse.Result.CREATED) {
             return true;
         }
         return false;
@@ -106,15 +115,13 @@ public class ElasticHelper {
     }
 
 
-
-
     // es的 bool 查询，可以实现复杂的查询条件，包括must、should、filter、mustNot等，这里封装了常用的查询条件
     // 包括match、term、range、bool等子查询条件，可以根据需求灵活使用
     // 高亮功能可以根据需求选择是否开启，如果开启，则会返回匹配到的高亮内容
-    public ElasticResult boolQuerySearch(String indexname,String highlightField, int from, int size,
-          List<MatchCondition> mustQuery, List<MatchCondition> shouldQuery,
-          List<TermCondition> filterTermQuery, List<RangeCondition> filterRangeQuery,
-          List<TermCondition> mustNotTermQuery,List<RangeCondition> mustNotRangeQuery) throws IOException {
+    public ElasticResult boolQuerySearch(String indexname, String highlightField, int from, int size,
+                                         List<MatchCondition> mustQuery, List<MatchCondition> shouldQuery,
+                                         List<TermCondition> filterTermQuery, List<RangeCondition> filterRangeQuery,
+                                         List<TermCondition> mustNotTermQuery, List<RangeCondition> mustNotRangeQuery) throws IOException {
 
         SearchRequest request = new SearchRequest(indexname);
         // 添加查询条件
@@ -124,7 +131,7 @@ public class ElasticHelper {
                 mustNotTermQuery, mustNotRangeQuery);
 
         // 添加高亮条件
-        if (highlightField != null && highlightField != ""){
+        if (highlightField != null && highlightField != "") {
             request = handleSearchRequestHighlight(request, highlightField);
         }
 
@@ -151,7 +158,7 @@ public class ElasticHelper {
 
         // 添加过滤条件 但是打分的匹配条件就传入为null，不进行处理
         request = handleSearchRequestQuery(request,
-                null,null,
+                null, null,
                 filterTermQuery, filterRangeQuery,
                 mustNotTermQuery, mustNotRangeQuery);
         // 添加排序条件
@@ -163,22 +170,34 @@ public class ElasticHelper {
     }
 
 
-
     // 自定义评分权重函数
     public ElasticResult functionScoreQuerySearch(String indexname, int from, int size,
-                                  List<ScoreFunctionCondition> scoreFunctionConditions)throws  IOException{
-
+                                                  List<ScoreFunctionCondition> scoreFunctionConditions) throws IOException {
         SearchRequest request = new SearchRequest(indexname);
         FunctionScoreQueryBuilder.FilterFunctionBuilder[] filterFunctionBuilders = {};
-        if (scoreFunctionConditions != null && scoreFunctionConditions.size() > 0){
-            for (int i = 0; i < scoreFunctionConditions.size(); i++){
+        if (scoreFunctionConditions != null && scoreFunctionConditions.size() > 0) {
+            for (int i = 0; i < scoreFunctionConditions.size(); i++) {
                 ScoreFunctionCondition scoreFunctionCondition = scoreFunctionConditions.get(i);
                 if (scoreFunctionCondition.getCondition().getClass().equals(MatchCondition.class)) {
-
-                }else if (scoreFunctionCondition.getCondition().getClass().equals(TermCondition.class)){
-
-                }else if (scoreFunctionCondition.getCondition().getClass().equals(RangeCondition.class)){
-
+                    MatchCondition matchCondition = (MatchCondition) scoreFunctionCondition.getCondition();
+                    filterFunctionBuilders[i] = new FunctionScoreQueryBuilder.FilterFunctionBuilder(
+                            QueryBuilders.matchQuery(matchCondition.getFieldName(), matchCondition.getMatchValue()),
+                            ScoreFunctionBuilders.weightFactorFunction(scoreFunctionCondition.getWeight())
+                    );
+                } else if (scoreFunctionCondition.getCondition().getClass().equals(TermCondition.class)) {
+                    TermCondition termCondition = (TermCondition) scoreFunctionCondition.getCondition();
+                    filterFunctionBuilders[i] = new FunctionScoreQueryBuilder.FilterFunctionBuilder(
+                            QueryBuilders.termQuery(termCondition.getFiledName(), termCondition.getTermValue()),
+                            ScoreFunctionBuilders.weightFactorFunction(scoreFunctionCondition.getWeight())
+                    );
+                } else if (scoreFunctionCondition.getCondition().getClass().equals(RangeCondition.class)) {
+                    RangeCondition rangeCondition = (RangeCondition) scoreFunctionCondition.getCondition();
+                    filterFunctionBuilders[i] = new FunctionScoreQueryBuilder.FilterFunctionBuilder(
+                            QueryBuilders.rangeQuery(rangeCondition.getFiledName())
+                                    .gt(rangeCondition.getGtCondition())
+                                    .lt(rangeCondition.getLtCondition()),
+                            ScoreFunctionBuilders.weightFactorFunction(scoreFunctionCondition.getWeight())
+                    );
                 }
             }
         }
@@ -190,10 +209,41 @@ public class ElasticHelper {
     }
 
 
+    // 聚合查询
+    // 传入的分组条件要精确值 termFiled
+    // 分组之后要聚合的字段  statsFiled 要数字类型的 ，因为要对每组的这个字段进行 avg min max sum 这些操作
+    public List<AggResult> aggregationQuerySearch(String indexname, int size,
+                                                String termFiled, String statsFiled,
+                                                List<TermCondition> filterTermQuery, List<RangeCondition> filterRangeQuery) throws IOException {
+        SearchRequest request = new SearchRequest(indexname);
+        List<AggResult> results = new ArrayList<>();
+        // 添加过滤条件
+        request = handleSearchRequestQuery(request,
+                null, null,
+                filterTermQuery, filterRangeQuery,
+                null, null);
+
+        // 添加聚合条件
+        request.source().aggregation(AggregationBuilders.terms(termFiled).field(termFiled).size(size)
+                .subAggregation(AggregationBuilders.stats(statsFiled).field(statsFiled))
+        );
+        SearchResponse response = client.search(request, RequestOptions.DEFAULT);
+        Aggregations aggregations = response.getAggregations();
+        Terms aggregation = aggregations.get(termFiled);
+        List<? extends Terms.Bucket> buckets = aggregation.getBuckets();
+        for (Terms.Bucket bucket : buckets) {
+            Stats stats = bucket.getAggregations().get(statsFiled);
+            AggResult aggResult = new AggResult(
+                    termFiled, bucket.getKey(), bucket.getDocCount(),
+                    statsFiled, stats.getSum(), stats.getAvg(), stats.getMax(), stats.getMin(), stats.getCount()
+            );
+            results.add(aggResult);
+        }
+        return results;
+    }
 
 
-
-     //
+    //
     //  下面的方法是一些 private 辅助方法，主要是用于上面public函数 实现功能时候的辅助工具方法
     //
 
@@ -286,7 +336,6 @@ public class ElasticHelper {
         request.source().highlighter(SearchSourceBuilder.highlight().field(highlightField));
         return request;
     }
-
 
 
     // 处理搜索到的hits结果集 根据需求装载sources和highlights
