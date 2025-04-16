@@ -10,14 +10,12 @@ public class RabbitMqTest {
     @Autowired
     RabbitMqProducer rabbitMqProducer;
     @Test
-    void testPersisted(){
-        rabbitMqProducer.sendPersistedMessage();
+    void  testMessage(){
+       rabbitMqProducer.sendMessage();
     }
-
 
     @Test
-    void testNonPersisted(){
-        rabbitMqProducer.sendNonPersistedMessage();
+    void  testDelayMessage(){
+        rabbitMqProducer.sendMessageDelay();
     }
-
 }
