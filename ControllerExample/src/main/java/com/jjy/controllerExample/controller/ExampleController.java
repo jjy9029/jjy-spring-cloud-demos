@@ -2,7 +2,8 @@ package com.jjy.controllerExample.controller;
 
 import com.jjy.controllerExample.common.ApiResult;
 import com.jjy.controllerExample.domain.Example;
-import io.swagger.v3.oas.annotations.tags.Tag;
+//import io.swagger.annotations.Api;
+import io.swagger.annotations.Api;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,7 +20,7 @@ import java.util.StringJoiner;
 @RestController
 @RequestMapping("/example")
 @CrossOrigin("*")
-@Tag(name = "ExampleController",description = "rest风格接口样例")
+@Api(value = "ExampleController",description = "rest风格接口样例")
 public class ExampleController {
     @Value("${jjy.db.username}")
     private String username;

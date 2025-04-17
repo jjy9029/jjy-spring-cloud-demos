@@ -4,3 +4,19 @@ server:
 spring:
   profiles:
     active: dev
+
+knife4j:
+  enable: true
+  openapi:
+    title: jjy的swagger接口文档
+    description: "jjy的swagger接口文档"
+    email: 576298066@qq.com
+    concat: jjy
+    url: http://localhost:8711/v2/api-docs
+    version: v1.0.0
+    group:
+      default:
+        group-name: default
+        api-rule: package
+        api-rule-resources:
+          - com.jjy.controllerExample.controller

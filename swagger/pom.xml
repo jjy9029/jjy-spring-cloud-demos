@@ -37,15 +37,19 @@
         </dependency>
 
 
-        <!-- springboot2.x 使用这个依赖 -->
-        <dependency>
-            <groupId>com.github.xiaoymin</groupId>
-            <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
-            <version>4.3.0</version>
-        </dependency>
+        <!-- springboot2.x swagger3 -->
+        <!-- http://${host}:${port}/swagger-ui/index.html#/-->
+        <!--  要注册@openApi的Bean      -->
+<!--        <dependency>-->
+<!--            <groupId>com.github.xiaoymin</groupId>-->
+<!--            <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>-->
+<!--            <version>4.3.0</version>-->
+<!--        </dependency>-->
 
 
-
+        <!-- springboot2.x swagger2 -->
+        <!--http://${host}:${port}/doc.html#/home   -->
+        <!-- 有swagger3依赖 文档会失效  -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
             <artifactId>knife4j-openapi2-spring-boot-starter</artifactId>
